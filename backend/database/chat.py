@@ -43,11 +43,9 @@ def get_messages_by_chat_id(session: Session, chat_id: int) -> list[DBMessage]:
     Returns:
         list[DBMessage]: The list of messages
     """
-    # Check if the chat exists
     chat = session.get(DBChat, chat_id)
     if not chat:
         raise EntityNotFound("chat", chat_id)
-    # Retrieve messages for the chat
     stmt = select(DBMessage).where(DBMessage.chat_id == chat_id).order_by(DBMessage.id)
     results = session.exec(stmt).all()
     return results
@@ -62,16 +60,11 @@ def get_accounts_by_chat_id(session: Session, chat_id: int) -> list[DBAccount]:
     Returns:
         list[DBAccount]: The list of accounts
     """
-    # Check if the chat exists
     stmt = select(DBChatMembership).where(DBChatMembership.chat_id == chat_id)
     memberships = session.exec(stmt).all()
     if not memberships:
         raise EntityNotFound("chat", chat_id)
-
-    # Get the account ids
     account_ids = [membership.account_id for membership in memberships]
-
-    # Retrieve accounts
     stmt = select(DBAccount).where(DBAccount.id.in_(account_ids)).order_by(DBAccount.id)
     results = session.exec(stmt).all()
     return results
