@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
 from backend.database import account as AccountRepository
 from backend.database.schema import DBAccount
 from backend.dependencies import DBSession
