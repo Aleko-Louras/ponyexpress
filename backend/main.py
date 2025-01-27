@@ -9,7 +9,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from backend.dependencies import create_db_tables
-
+#import separate router modules
+from backend.routers import accounts, chats
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,12 +19,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="<your API title>",
-    summary="<your API summary>",
+    title="Pony Express",
+    summary="A chat application",
     lifespan=lifespan,
 )
+app.include_router(accounts.router)
+app.include_router(chats.router)
 
-
-@app.get("/status", response_model=None, status_code=204)
-def status():
-    pass
+# @app.get("/status", response_model=None, status_code=204)
+# def status():
+#     pass
+#
