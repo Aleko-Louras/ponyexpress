@@ -5,13 +5,10 @@ Args:
 """
 
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
 from backend.dependencies import create_db_tables
 from backend.exceptions import EntityNotFound
-#import separate router modules
 from backend.routers import accounts, chats
 
 @asynccontextmanager
@@ -19,12 +16,12 @@ async def lifespan(app: FastAPI):
     create_db_tables()
     yield
 
-
 app = FastAPI(
     title="Pony Express",
     summary="A chat application",
     lifespan=lifespan,
 )
+
 @app.exception_handler(EntityNotFound)
 def handle_entity_not_found(request: Request, exc: EntityNotFound):
     return JSONResponse(

@@ -4,7 +4,7 @@ from backend.database.schema import DBAccount
 from backend.exceptions import EntityNotFound
 
 def get_all_accounts(session: Session) -> list[DBAccount]:
-    """Retrieve all accounts from the database.
+    """Select all the accounts from the database
 
     Args:
         session (Session): The database session
@@ -17,11 +17,11 @@ def get_all_accounts(session: Session) -> list[DBAccount]:
     return list(results)
 
 def get_account_by_id(session: Session, account_id: int) -> DBAccount:
-    """Retrieve a specific account from the database.
+    """Selects the account by id in the database
 
     Args:
         session (Session): The database session
-        account_id (int): The id of the account to retrieve
+        account_id (int): The id of the account to get
 
     Returns:
         DBAccount: The account
