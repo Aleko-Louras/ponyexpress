@@ -9,6 +9,10 @@ def client():
 
     with TestClient(app) as test_client:
         yield test_client
+def test_status(client):
+    """Test the /status route."""
+    response = client.get("/status")
+    assert response.status_code == 204
 
 def test_get_accounts(client):
     response = client.get("/accounts")
