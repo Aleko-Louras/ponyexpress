@@ -26,7 +26,7 @@ app = FastAPI(
 app.include_router(accounts.router)
 app.include_router(chats.router)
 
-# @app.get("/status", response_model=None, status_code=204)
-# def status():
-#     pass
-#
+@app.get("/status", response_model=None, status_code=204)
+def status():
+    pass
+
