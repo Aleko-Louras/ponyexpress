@@ -22,11 +22,11 @@ def update_chat(chat_id: int, chat_update: ChatUpdate, session: DBSession):
     try:
         return ChatRepository.update_chat(session, chat_id, chat_update)
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
     except DuplicateEntityValue as e:
-        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+        raise e
     except ChatMembershipRequired as e:
-        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+        raise e
 
 
 @router.delete("/{chat_id}", status_code=204)
@@ -35,7 +35,7 @@ def delete_chat(chat_id: int, session: DBSession):
         ChatRepository.delete_chat(session, chat_id)
         return
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
 
 @router.get("/")
 def get_chats(session: DBSession) -> dict:
