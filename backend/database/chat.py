@@ -1,7 +1,15 @@
 from sqlmodel import Session, select
 from backend.database.schema import DBChat, DBMessage, DBAccount, DBChatMembership
 from backend.exceptions import EntityNotFound
+from backend.models import ChatCreate
 
+
+def create_chat(session: Session, chat_create: ChatCreate) -> DBChat:
+    if not session.get(DBAccount, chat_create.owner_id):
+        raise EntityNotFound("account", chat_create.owner_id)
+
+    if session.exec(select(DBChat).where(DBChat.name == chat_create.name)).first():
+        raise IntegrityError(f"Duplicat")
 def get_all_chats(session: Session) -> list[DBChat]:
     """Retrieve all chats from the database.
 
