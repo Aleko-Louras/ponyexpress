@@ -13,9 +13,9 @@ def create_chat(chat_create: ChatCreate, session: DBSession):
     try:
         return ChatRepository.create_chat(session, chat_create)
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
     except DuplicateEntityValue as e:
-        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+        raise e
 
 @router.put("/{chat_id}", response_model=Chat)
 def update_chat(chat_id: int, chat_update: ChatUpdate, session: DBSession):
