@@ -23,7 +23,7 @@ def add_membership(chat_id: int, membership_create: MembershipCreate, session: D
         status_code = 201 if new_membership else 200  # ✅ Return 201 if new membership is created
         return JSONResponse(status_code=status_code, content=new_membership.dict())
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
 
 @router.delete("/{chat_id}/accounts/{account_id}", status_code=204)
 def remove_membership(chat_id: int, account_id: int, session: DBSession):
