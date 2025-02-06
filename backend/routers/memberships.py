@@ -20,10 +20,16 @@ router = APIRouter(prefix="/chats", tags=["Memberships"])
 def add_membership(chat_id: int, membership_create: MembershipCreate, session: DBSession):
     try:
         new_membership = MembershipRepository.add_membership(session, chat_id, membership_create)
+
         status_code = 201 if new_membership else 200  # ✅ Return 201 if new membership is created
-        return JSONResponse(status_code=status_code, content=new_membership.dict())
+
+        # ✅ Ensure the response contains the membership data
+        return JSONResponse(
+            status_code=status_code,
+            content={"chat_id": chat_id, "account_id": membership_create.account_id}
+        )
     except EntityNotFound as e:
-        raise e
+        raise e  # ✅ Pass through correctly
 
 @router.delete("/{chat_id}/accounts/{account_id}", status_code=204)
 def remove_membership(chat_id: int, account_id: int, session: DBSession):
