@@ -31,8 +31,8 @@ def remove_membership(chat_id: int, account_id: int, session: DBSession):
         MembershipRepository.remove_membership(session, chat_id, account_id)
         return
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e  # ✅ Raise it directly (so it goes through the custom handler)
     except ChatMembershipRequired as e:
-        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+        raise e  # ✅ Raise it directly
     except ChatOwnerRemoval as e:
-        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+        raise e  # ✅ Raise it directly, FastAPI will handle it!
