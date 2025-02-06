@@ -33,11 +33,12 @@ def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate) -> DBCh
         chat.name = chat_update.name
 
     if chat_update.owner_id:
-        owner = session.get(DBAccount, chat_update.owner_id)
-        if not owner:
-            raise EntityNotFound("account", chat_update.owner_id)
         if not session.exec(select(DBChatMembership).where((DBChatMembership.account_id == chat_update.owner_id) & (DBChatMembership.chat_id == chat_id))).first():
             raise ChatMembershipRequired(chat_update.owner_id, chat_id)
+
+        if not session.get(DBAccount, chat_update.owner_id):
+            raise EntityNotFound("account", chat_update.owner_id)
+
         chat.owner_id = chat_update.owner_id
 
     session.commit()
