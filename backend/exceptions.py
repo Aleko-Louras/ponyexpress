@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 class EntityNotFound(Exception):
     def __init__(self, entity_name: str, entity_id: int):
         self.error = "entity_not_found"
@@ -15,7 +17,12 @@ class ChatMembershipRequired(Exception):
         self.message = f"Account with id={account_id} must be a member of chat with id={chat_id}"
 
 
-class ChatOwnerRemoval(Exception):
+class ChatOwnerRemoval(HTTPException):
     def __init__(self):
-        self.error = "chat_owner_removal"
-        self.message = "Unable to remove the owner of a chat"
+        super().__init__(
+            status_code=422,
+            detail={
+                "error": "chat_owner_removal",
+                "message": "Unable to remove the owner of a chat"
+            },
+        )
