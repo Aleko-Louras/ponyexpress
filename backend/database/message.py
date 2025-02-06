@@ -32,6 +32,10 @@ def create_message(session: Session, chat_id: int, message_create: MessageCreate
 
 def update_message(session: Session, chat_id: int, message_id: int, message_update: MessageUpdate) -> DBMessage:
     """Update a message's text."""
+    chat = session.get(DBChat, chat_id)
+    if chat is None:
+        raise EntityNotFound("chat", chat_id)
+
     message = session.get(DBMessage, message_id)
     if not message or message.chat_id != chat_id:
         raise EntityNotFound("message", message_id)
