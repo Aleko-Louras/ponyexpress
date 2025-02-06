@@ -2,10 +2,40 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.database import chat as ChatRepository
 from backend.database.schema import DBChat
 from backend.dependencies import DBSession
-from backend.models import Chat, Metadata, Account, Message
+from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired
+from backend.models import Chat, Metadata, Account, Message, ChatCreate, ChatUpdate
 from typing import List
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
+
+@router.post("/", response_model=Chat, status_code=201)
+def create_chat(chat_create: ChatCreate, session: DBSession):
+    try:
+        return ChatRepository.create_chat(session, chat_create)
+    except EntityNotFound as e:
+        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+    except DuplicateEntityValue as e:
+        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+
+@router.put("/{chat_id}", response_model=Chat)
+def update_chat(chat_id: int, chat_update: ChatUpdate, session: DBSession):
+    try:
+        return ChatRepository.update_chat(session, chat_id, chat_update)
+    except EntityNotFound as e:
+        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+    except DuplicateEntityValue as e:
+        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+    except ChatMembershipRequired as e:
+        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+
+
+@router.delete("/{chat_id}", status_code=204)
+def delete_chat(chat_id: int, session: DBSession):
+    try:
+        ChatRepository.delete_chat(session, chat_id)
+        return
+    except EntityNotFound as e:
+        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
 
 @router.get("/")
 def get_chats(session: DBSession) -> dict:

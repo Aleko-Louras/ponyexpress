@@ -20,6 +20,10 @@ class Message(BaseModel):
     chat_id: int
     created_at: datetime
 
+class Membership(BaseModel):
+    chat_id: int
+    account_id: int
+
 class ChatCreate(BaseModel):
     name: str
     owner_id: int
