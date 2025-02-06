@@ -16,13 +16,7 @@ class ChatMembershipRequired(Exception):
         self.error = "chat_membership_required"
         self.message = f"Account with id={account_id} must be a member of chat with id={chat_id}"
 
-
-class ChatOwnerRemoval(HTTPException):
+class ChatOwnerRemoval(Exception):
     def __init__(self):
-        super().__init__(
-            status_code=422,
-            detail={
-                "error": "chat_owner_removal",
-                "message": "Unable to remove the owner of a chat"
-            },
-        )
+        self.error = "chat_owner_removal"
+        self.message = "Unable to remove the owner of a chat"
