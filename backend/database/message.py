@@ -11,13 +11,16 @@ def create_message(session: Session, chat_id: int, message_create: MessageCreate
     if not chat:
         raise EntityNotFound("chat", chat_id)
 
+    membership = session.exec(select(DBChatMembership).where(
+        (DBChatMembership.account_id == message_create.account_id) & (DBChatMembership.chat_id == chat_id))).first()
+    if not membership:
+        raise ChatMembershipRequired(message_create.account_id, chat_id)
+
     account = session.get(DBAccount, message_create.account_id)
     if not account:
         raise EntityNotFound("account", message_create.account_id)
 
-    membership = session.exec(select(DBChatMembership).where((DBChatMembership.account_id == message_create.account_id) & (DBChatMembership.chat_id == chat_id))).first()
-    if not membership:
-        raise ChatMembershipRequired(message_create.account_id, chat_id)
+
 
     message = DBMessage(
         text=message_create.text,
