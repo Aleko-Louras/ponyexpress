@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.responses import JSONResponse
 
 from backend.database import membership as MembershipRepository
+from backend.database.schema import DBChatMembership
 from backend.dependencies import DBSession
 from backend.models import MembershipCreate, Membership
 from backend.exceptions import EntityNotFound, ChatMembershipRequired, ChatOwnerRemoval
@@ -19,17 +20,17 @@ router = APIRouter(prefix="/chats", tags=["Memberships"])
 @router.post("/{chat_id}/accounts", response_model=Membership)
 def add_membership(chat_id: int, membership_create: MembershipCreate, session: DBSession):
     try:
-        new_membership = MembershipRepository.add_membership(session, chat_id, membership_create)
+        membership = MembershipRepository.add_membership(session, chat_id, membership_create)
 
-        status_code = 201 if new_membership else 200  # ✅ Return 201 if new membership is created
+        # ✅ Return 201 if a new membership was created, otherwise 200
+        status_code = 201 if session.get(DBChatMembership, (membership_create.account_id, chat_id)) is None else 200
 
-        # ✅ Ensure the response contains the membership data
         return JSONResponse(
             status_code=status_code,
             content={"chat_id": chat_id, "account_id": membership_create.account_id}
         )
     except EntityNotFound as e:
-        raise e  # ✅ Pass through correctly
+        raise e  # ✅ Keep error handling consistent
 
 @router.delete("/{chat_id}/accounts/{account_id}", status_code=204)
 def remove_membership(chat_id: int, account_id: int, session: DBSession):

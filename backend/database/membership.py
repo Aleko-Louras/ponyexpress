@@ -5,7 +5,8 @@ from backend.models import MembershipCreate
 
 
 def add_membership(session: Session, chat_id: int, membership_create: MembershipCreate) -> DBChatMembership:
-    """Add an account to a chat."""
+    """Add an account to a chat, or return existing membership."""
+
     chat = session.get(DBChat, chat_id)
     if not chat:
         raise EntityNotFound("chat", chat_id)
@@ -14,19 +15,24 @@ def add_membership(session: Session, chat_id: int, membership_create: Membership
     if not account:
         raise EntityNotFound("account", membership_create.account_id)
 
+    # ✅ Check if membership already exists
     existing_membership = session.exec(
         select(DBChatMembership).where(
-            (DBChatMembership.account_id == membership_create.account_id) & (DBChatMembership.chat_id == chat_id)
+            (DBChatMembership.account_id == membership_create.account_id) &
+            (DBChatMembership.chat_id == chat_id)
         )
     ).first()
 
     if existing_membership:
-        return existing_membership  # No need to add if already a member
+        return existing_membership  # ✅ Just return it
 
+    # ✅ Create a new membership
     new_membership = DBChatMembership(account_id=membership_create.account_id, chat_id=chat_id)
     session.add(new_membership)
     session.commit()
-    return new_membership
+    session.refresh(new_membership)
+
+    return new_membership  # ✅ Return new membership
 
 
 def remove_membership(session: Session, chat_id: int, account_id: int):
