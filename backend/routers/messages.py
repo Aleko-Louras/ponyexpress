@@ -12,9 +12,9 @@ def create_message(chat_id: int, message_create: MessageCreate, session: DBSessi
     try:
         return MessageRepository.create_message(session, chat_id, message_create)
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
     except ChatMembershipRequired as e:
-        raise HTTPException(status_code=422, detail={"error": e.error, "message": e.message})
+        raise e
 
 
 @router.put("/{chat_id}/messages/{message_id}", response_model=Message)
@@ -22,7 +22,7 @@ def update_message(chat_id: int, message_id: int, message_update: MessageUpdate,
     try:
         return MessageRepository.update_message(session, chat_id, message_id, message_update)
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
 
 
 @router.delete("/{chat_id}/messages/{message_id}", status_code=204)
@@ -31,4 +31,4 @@ def delete_message(chat_id: int, message_id: int, session: DBSession):
         MessageRepository.delete_message(session, chat_id, message_id)
         return
     except EntityNotFound as e:
-        raise HTTPException(status_code=404, detail={"error": e.error, "message": e.message})
+        raise e
