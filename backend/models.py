@@ -19,3 +19,21 @@ class Message(BaseModel):
     account_id: int
     chat_id: int
     created_at: datetime
+
+class ChatCreate(BaseModel):
+    name: str
+    owner_id: int
+
+class ChatUpdate(BaseModel):
+    name: str | None = None
+    owner_id: int | None = None
+
+class MessageCreate(BaseModel):
+    text: str
+    account_id: int
+
+class MessageUpdate(BaseModel):
+    text: str
+
+class MembershipCreate(BaseModel):
+    account_id: int
