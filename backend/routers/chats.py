@@ -10,32 +10,17 @@ router = APIRouter(prefix="/chats", tags=["Chats"])
 
 @router.post("/", response_model=Chat, status_code=201)
 def create_chat(chat_create: ChatCreate, session: DBSession):
-    try:
-        return ChatRepository.create_chat(session, chat_create)
-    except EntityNotFound as e:
-        raise e
-    except DuplicateEntityValue as e:
-        raise e
+    return ChatRepository.create_chat(session, chat_create)
 
 @router.put("/{chat_id}", response_model=Chat)
 def update_chat(chat_id: int, chat_update: ChatUpdate, session: DBSession):
-    try:
-        return ChatRepository.update_chat(session, chat_id, chat_update)
-    except EntityNotFound as e:
-        raise e
-    except DuplicateEntityValue as e:
-        raise e
-    except ChatMembershipRequired as e:
-        raise e
+    return ChatRepository.update_chat(session, chat_id, chat_update)
 
 
 @router.delete("/{chat_id}", status_code=204)
 def delete_chat(chat_id: int, session: DBSession):
-    try:
-        ChatRepository.delete_chat(session, chat_id)
-        return
-    except EntityNotFound as e:
-        raise e
+    ChatRepository.delete_chat(session, chat_id)
+    return
 
 @router.get("/")
 def get_chats(session: DBSession) -> dict:

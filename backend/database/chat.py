@@ -7,18 +7,15 @@ from backend.models import ChatCreate, ChatUpdate, MessageUpdate, MessageCreate
 def create_chat(session: Session, chat_create: ChatCreate) -> DBChat:
     if not session.get(DBAccount, chat_create.owner_id):#if the account doesnt exists
         raise EntityNotFound("account", chat_create.owner_id)
-
     if session.exec(select(DBChat).where(DBChat.name == chat_create.name)).first():#if the chat exists already
         raise DuplicateEntityValue("chat", "name", chat_create.name)
     chat_to_add = DBChat(name=chat_create.name, owner_id=chat_create.owner_id)
     session.add(chat_to_add)
     session.commit()
     session.refresh(chat_to_add)
-
     new_membership = DBChatMembership(account_id = chat_to_add.owner_id, chat_id= chat_to_add.id)
     session.add(new_membership)
     session.commit()
-
     return chat_to_add
 
 def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate) -> DBChat:
