@@ -51,6 +51,10 @@ def update_message(session: Session, chat_id: int, message_id: int, message_upda
 
 def delete_message(session: Session, chat_id: int, message_id: int):
     """Delete a message."""
+    chat = session.get(DBChat, chat_id)
+    if chat is None:
+        raise EntityNotFound("chat", chat_id)  # ✅ Raises correct error first
+
     message = session.get(DBMessage, message_id)
     if not message or message.chat_id != chat_id:
         raise EntityNotFound("message", message_id)

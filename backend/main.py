@@ -53,8 +53,9 @@ def handle_chat_membership_required(request: Request, exc: ChatMembershipRequire
 def handle_chat_owner_removal(request: Request, exc: ChatOwnerRemoval):
     return JSONResponse(
         status_code=422,
-        content={"error": exc.error, "message": exc.message}  # ✅ No "detail" wrapping
+        content={"error": exc.error, "message": exc.message}
     )
+
 app.include_router(accounts.router)
 app.include_router(chats.router)
 app.include_router(messages.router)
