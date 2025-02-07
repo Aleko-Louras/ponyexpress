@@ -39,23 +39,11 @@ def get_chat(chat_id: int, session: DBSession)-> DBChat:
 @router.get("/{chat_id}/messages")
 def get_chat_messages(chat_id: int, session: DBSession):
     messages = ChatRepository.get_messages_by_chat_id(session, chat_id)
-    messages_data = [
-        Message(
-            id= msg.id,
-            text= msg.text,
-            account_id= msg.account_id,
-            chat_id= msg.chat_id,
-            created_at = msg.created_at.isoformat(),
-    )
-        for msg in messages
-    ]
+    messages_data = [Message(id= msg.id, text= msg.text,  account_id= msg.account_id,  chat_id= msg.chat_id,  created_at = msg.created_at.isoformat())  for msg in messages]
     return {"metadata": {"count": len(messages_data)}, "messages": messages_data}
 
 @router.get("/{chat_id}/accounts", response_model=dict)
 def get_chat_accounts(chat_id: int, session: DBSession):
     accounts = ChatRepository.get_accounts_by_chat_id(session, chat_id)
     accounts_data = [Account(id= acc.id, username= acc.username) for acc in accounts]
-    return {
-        "metadata": {"count": len(accounts_data)},
-        "accounts": accounts_data,
-    }
+    return {"metadata": {"count": len(accounts_data)}, "accounts": accounts_data,}

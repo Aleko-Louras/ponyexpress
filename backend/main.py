@@ -22,6 +22,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+#Implementation for different exception types to raise and json to respond
 @app.exception_handler(EntityNotFound)
 def handle_entity_not_found(request: Request, exc: EntityNotFound):
     return JSONResponse(
