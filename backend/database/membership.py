@@ -36,16 +36,14 @@ def add_membership(session: Session, chat_id: int, membership_create: Membership
 
 
 def remove_membership(session: Session, chat_id: int, account_id: int):
-    """Remove an account from a chat and nullify their messages' account_id."""
-
+    """Remove an account from a chat."""
     chat = session.get(DBChat, chat_id)
     if not chat:
         raise EntityNotFound("chat", chat_id)
 
     membership = session.exec(
         select(DBChatMembership).where(
-            (DBChatMembership.account_id == account_id) &
-            (DBChatMembership.chat_id == chat_id)
+            (DBChatMembership.account_id == account_id) & (DBChatMembership.chat_id == chat_id)
         )
     ).first()
 
@@ -55,13 +53,14 @@ def remove_membership(session: Session, chat_id: int, account_id: int):
     if chat.owner_id == account_id:
         raise ChatOwnerRemoval()
 
-    # ✅ Nullify account_id for all messages in this chat
-    session.exec(
+    messages = session.exec(
         select(DBMessage)
         .where((DBMessage.chat_id == chat_id) & (DBMessage.account_id == account_id))
-        .update({DBMessage.account_id: None})
-    )
+    ).all()
 
-    # ✅ Remove membership
+    for message in messages:
+        message.account_id = None  # ✅ Set account_id to NULL manually
+
+    session.commit()
     session.delete(membership)
     session.commit()
