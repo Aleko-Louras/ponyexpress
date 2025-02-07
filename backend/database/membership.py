@@ -4,7 +4,7 @@ from backend.exceptions import EntityNotFound, ChatMembershipRequired, ChatOwner
 from backend.models import MembershipCreate
 
 
-def add_membership(session: Session, chat_id: int, membership_create: MembershipCreate) -> DBChatMembership:
+def add_membership(session: Session, chat_id: int, membership_create: MembershipCreate) -> tuple[DBChatMembership, bool]:
     """Add an account to a chat, or return existing membership."""
 
     chat = session.get(DBChat, chat_id)
@@ -15,7 +15,7 @@ def add_membership(session: Session, chat_id: int, membership_create: Membership
     if not account:
         raise EntityNotFound("account", membership_create.account_id)
 
-    # ✅ Check if membership already exists
+    # ✅ Check if membership already exists INSIDE the repository
     existing_membership = session.exec(
         select(DBChatMembership).where(
             (DBChatMembership.account_id == membership_create.account_id) &
@@ -24,7 +24,7 @@ def add_membership(session: Session, chat_id: int, membership_create: Membership
     ).first()
 
     if existing_membership:
-        return existing_membership  # ✅ Just return it
+        return existing_membership, False  # ✅ Return membership with False (no new creation)
 
     # ✅ Create a new membership
     new_membership = DBChatMembership(account_id=membership_create.account_id, chat_id=chat_id)
@@ -32,7 +32,7 @@ def add_membership(session: Session, chat_id: int, membership_create: Membership
     session.commit()
     session.refresh(new_membership)
 
-    return new_membership  # ✅ Return new membership
+    return new_membership, True  # ✅
 
 
 def remove_membership(session: Session, chat_id: int, account_id: int):
