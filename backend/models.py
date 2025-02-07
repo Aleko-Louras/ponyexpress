@@ -16,7 +16,7 @@ class Chat(BaseModel):
 class Message(BaseModel):
     id: int
     text: str
-    account_id: int
+    account_id: int | None
     chat_id: int
     created_at: datetime
 
