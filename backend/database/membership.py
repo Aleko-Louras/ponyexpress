@@ -36,7 +36,6 @@ def add_membership(session: Session, chat_id: int, membership_create: Membership
 
 
 def remove_membership(session: Session, chat_id: int, account_id: int):
-    def remove_membership(session: Session, chat_id: int, account_id: int):
     """Remove an account from a chat and nullify their messages' account_id."""
 
     chat = session.get(DBChat, chat_id)
