@@ -1,32 +1,54 @@
 from sqlmodel import Session, select
 from backend.database.schema import DBChat, DBMessage, DBAccount, DBChatMembership
 from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired
-from backend.models import ChatCreate, ChatUpdate, MessageUpdate, MessageCreate
+from backend.models import ChatCreate, ChatUpdate
 
 
 def create_chat(session: Session, chat_create: ChatCreate) -> DBChat:
+    """Create a chat in the database
+
+       Args:
+           session (Session): The database session
+            chat_create (ChatCreate): The chatcreate DataModel for body parameters
+       Returns:
+           DBChat: The newly made database chat entity
+    """
     if not session.get(DBAccount, chat_create.owner_id):#if the account doesnt exists
         raise EntityNotFound("account", chat_create.owner_id)
     if session.exec(select(DBChat).where(DBChat.name == chat_create.name)).first():#if the chat exists already
         raise DuplicateEntityValue("chat", "name", chat_create.name)
+
     chat_to_add = DBChat(name=chat_create.name, owner_id=chat_create.owner_id)
     session.add(chat_to_add)
     session.commit()
-    session.refresh(chat_to_add)
+    session.refresh(chat_to_add)#make the chat first, then make the membership
+
     new_membership = DBChatMembership(account_id = chat_to_add.owner_id, chat_id= chat_to_add.id)
     session.add(new_membership)
     session.commit()
     return chat_to_add
 
 def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate) -> DBChat:
+    """Update a chat's name and/or owner.
+
+        Args:
+            session (Session): The database session
+            chat_id (int): The ID of the chat to be updated
+            chat_update (ChatUpdate): The data model containing the updated name and/or owner ID paremeters
+
+        Returns:
+            DBChat: The updated chat entity
+    """
     chat = session.get(DBChat, chat_id)
     if not chat:
         raise EntityNotFound("chat", chat_id)
 
+    #check for duplicate and null values for which to update
     if chat_update.name:
         existing_chat = session.exec(select(DBChat).where(DBChat.name == chat_update.name)).first()
         if existing_chat and existing_chat.id != chat_id:
             raise DuplicateEntityValue("chat", "name", chat_update.name)
+
         chat.name = chat_update.name
 
     if chat_update.owner_id:
@@ -43,9 +65,19 @@ def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate) -> DBCh
     return chat
 
 def delete_chat(session: Session, chat_id: int):
+    """Delete a chat from the database, along with its memberships and messages.
+
+        Args:
+            session (Session): The database session
+            chat_id (int): The ID of the chat to be deleted
+
+        Returns:
+            None
+    """
     chat_to_delete = session.get(DBChat, chat_id)
     if not chat_to_delete:
         raise EntityNotFound("chat", chat_id)
+
     session.delete(chat_to_delete)
     session.commit()
 
@@ -115,6 +147,5 @@ def get_accounts_by_chat_id(session: Session, chat_id: int) -> list[DBAccount]:
     stmt = select(DBAccount).where(DBAccount.id.in_(account_ids)).order_by(DBAccount.id)
     results = session.exec(stmt).all()
     return results
-#message related db queries
 
 

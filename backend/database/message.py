@@ -6,13 +6,21 @@ from backend.models import MessageCreate, MessageUpdate
 
 
 def create_message(session: Session, chat_id: int, message_create: MessageCreate) -> DBMessage:
-    """Create a new message in a chat."""
+    """Create a new message in a chat.
+
+        Args:
+            session (Session): The database session
+            chat_id (int): The ID of the chat where the message will be posted
+            message_create (MessageCreate): The data model for a message for body parameters
+
+        Returns:
+            DBMessage: The newly created message entity
+    """
     chat = session.get(DBChat, chat_id)
     if not chat:
         raise EntityNotFound("chat", chat_id)
 
-    membership = session.exec(select(DBChatMembership).where(
-        (DBChatMembership.account_id == message_create.account_id) & (DBChatMembership.chat_id == chat_id))).first()
+    membership = session.exec(select(DBChatMembership).where((DBChatMembership.account_id == message_create.account_id) & (DBChatMembership.chat_id == chat_id))).first()
     if not membership:
         raise ChatMembershipRequired(message_create.account_id, chat_id)
 
@@ -20,13 +28,7 @@ def create_message(session: Session, chat_id: int, message_create: MessageCreate
     if not account:
         raise EntityNotFound("account", message_create.account_id)
 
-
-
-    message = DBMessage(
-        text=message_create.text,
-        account_id=message_create.account_id,
-        chat_id=chat_id
-    )
+    message = DBMessage(text=message_create.text, account_id=message_create.account_id, chat_id=chat_id)
     session.add(message)
     session.commit()
     session.refresh(message)
@@ -34,7 +36,17 @@ def create_message(session: Session, chat_id: int, message_create: MessageCreate
 
 
 def update_message(session: Session, chat_id: int, message_id: int, message_update: MessageUpdate) -> DBMessage:
-    """Update a message's text."""
+    """Update a message in a chat.
+
+        Args:
+            session (Session): The database session
+            chat_id (int): The ID of the chat containing the message
+            message_id (int): The ID of the message to be updated
+            message_update (MessageUpdate): The data model for parameters
+
+        Returns:
+            DBMessage: The updated message entity
+    """
     chat = session.get(DBChat, chat_id)
     if chat is None:
         raise EntityNotFound("chat", chat_id)
@@ -50,10 +62,19 @@ def update_message(session: Session, chat_id: int, message_id: int, message_upda
 
 
 def delete_message(session: Session, chat_id: int, message_id: int):
-    """Delete a message."""
+    """Delete a message from a chat.
+
+        Args:
+            session (Session): The database session
+            chat_id (int): The ID of the chat containing the message
+            message_id (int): The ID of the message to delete
+
+        Returns:
+            None
+    """
     chat = session.get(DBChat, chat_id)
     if chat is None:
-        raise EntityNotFound("chat", chat_id)  # ✅ Raises correct error first
+        raise EntityNotFound("chat", chat_id)
 
     message = session.get(DBMessage, message_id)
     if not message or message.chat_id != chat_id:

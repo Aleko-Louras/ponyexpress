@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+#Exception classes for different exception types
 
 class EntityNotFound(Exception):
     def __init__(self, entity_name: str, entity_id: int):

@@ -24,6 +24,7 @@ class Membership(BaseModel):
     chat_id: int
     account_id: int
 
+#Models for body parameters
 class ChatCreate(BaseModel):
     name: str
     owner_id: int
