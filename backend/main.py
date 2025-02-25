@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from backend.dependencies import create_db_tables
 from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, ChatOwnerRemoval
-from backend.routers import accounts, chats, memberships, messages
+from backend.routers import accounts, chats, memberships, messages, auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,6 +61,7 @@ app.include_router(accounts.router)
 app.include_router(chats.router)
 app.include_router(messages.router)
 app.include_router(memberships.router)
+app.include_router(auth.router)
 
 @app.get("/status", response_model=None, status_code=204)
 def status():

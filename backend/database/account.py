@@ -1,7 +1,9 @@
 from sqlmodel import Session, select
-
+from backend.database.auth_service import AuthService
+from backend.models import Registration
 from backend.database.schema import DBAccount
-from backend.exceptions import EntityNotFound
+from backend.exceptions import EntityNotFound, DuplicateEntityValue
+
 
 def get_all_accounts(session: Session) -> list[DBAccount]:
     """Select all the accounts from the database
@@ -33,3 +35,33 @@ def get_account_by_id(session: Session, account_id: int) -> DBAccount:
     if account is None:
         raise EntityNotFound("account", account_id)
     return account
+
+class UserService:
+    @staticmethod
+    def register_user(session: Session, form: Registration) -> DBAccount:
+        if session.exec(select(DBAccount).where(DBAccount.username == form.username)).first():
+            raise DuplicateEntityValue("Duplicate value: account with username={} already exists".format(form.username))
+
+        if session.exec(select(DBAccount).where(DBAccount.email == form.email)).first():
+            raise DuplicateEntityValue("Duplicate value: account with email={} already exists".format(form.email))
+
+        hashed_password = AuthService.hash_password(form.password)
+        user = DBAccount(username=form.username, email=form.email, hashed_password=hashed_password)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+    @staticmethod
+    def validate_credentials(session: Session, username: str, password: str) -> DBAccount:
+        user = session.exec(select(DBAccount).where(DBAccount.username == username)).first()
+        if user is None or not AuthService.verify_password(password, user.hashed_password):
+            raise EntityNotFound("account", username)
+        return user
+
+    @staticmethod
+    def get_user_by_id(session: Session, user_id: int) -> DBAccount:
+        user = session.get(DBAccount, user_id)
+        if user is None:
+            raise EntityNotFound("account", user_id)
+        return user
