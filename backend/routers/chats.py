@@ -47,3 +47,18 @@ def get_chat_accounts(chat_id: int, session: DBSession):
     accounts = ChatRepository.get_accounts_by_chat_id(session, chat_id)
     accounts_data = [Account(id= acc.id, username= acc.username) for acc in accounts]
     return {"metadata": {"count": len(accounts_data)}, "accounts": accounts_data,}
+
+@router.post("/", status_code=201)
+def create_chat(chat_data: ChatCreate, session: DBSession, user: DBAccount = Depends(get_current_user)):
+    """Create a new chat - User must match the owner_id."""
+    if user.id != chat_data.owner_id:
+        raise HTTPException(status_code=403, detail={"error": "access_denied", "message": "Cannot create chat on behalf of different account"})
+    return ChatRepository.create_chat(session, chat_data)
+
+@router.put("/{chat_id}")
+def update_chat(chat_id: int, chat_data: ChatUpdate, session: DBSession, user: DBAccount = Depends(get_current_user)):
+    """Update a chat - User must be the chat owner."""
+    chat = ChatRepository.get_chat_by_id(session, chat_id)
+    if chat.owner_id != user.id:
+        raise HTTPException(status_code=403, detail={"error": "access_denied", "message": "Cannot update chat on behalf of different account"})
+    return ChatRepository.update_chat(session, chat_id, chat_data)
