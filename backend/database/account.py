@@ -69,7 +69,7 @@ def update_password(session: Session, account_id: int, old_password: str, new_pa
 
     # Verify the old password
     if not AuthService.verify_password(old_password, account.hashed_password):
-        raise ValueError("invalid_credentials")
+        raise InvalidCredentials()
 
     # Hash the new password and update
     account.hashed_password = AuthService.hash_password(new_password)

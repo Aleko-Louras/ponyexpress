@@ -20,6 +20,7 @@ class ChatOwnerRemoval(Exception):
     def __init__(self):
         self.error = "chat_owner_removal"
         self.message = "Unable to remove the owner of a chat"
+
 class InvalidCredentials(Exception):
     """Exception raised for invalid username or password."""
     def __init__(self):
@@ -44,6 +45,6 @@ class InvalidAccessToken(Exception):
         self.message = "Authentication failed: invalid access token"
 class AccessDenied(Exception):
     """Exception raised when a user attempts to perform an unauthorized action."""
-    def __init__(self):
+    def __init__(self, message: str):
         self.error = "access_denied"
-        self.message = "Cannot create message on behalf of different account"
+        self.message = message
