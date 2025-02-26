@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Form
 from backend.database import account as AccountRepository
 from backend.database.schema import DBAccount
 from backend.dependencies import DBSession, get_current_user
@@ -25,12 +25,16 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
     return account
 
 
-@router.put("/me")
-def update_current_account(session: DBSession, user: DBAccount = Depends(get_current_user), username: str | None = None, email: str | None = None):
-    """Update the authenticated user's account."""
-    return AccountRepository.update_account(session, user.id, username, email)
-
-from fastapi import Form
+@router.put("/me", response_model=Account)  # ✅ Use response_model to filter fields
+def update_current_account(
+    session: DBSession,
+    user: DBAccount = Depends(get_current_user),
+    username: str | None = None,
+    email: str | None = None,
+):
+    """Update the authenticated user's account and return only allowed fields."""
+    updated_account = AccountRepository.update_account(session, user.id, username, email)
+    return Account(id=updated_account.id, username=updated_account.username, email=updated_account.email)
 
 @router.put("/me/password", status_code=204)
 def update_password(
