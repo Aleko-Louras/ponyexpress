@@ -2,8 +2,8 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 from backend.database.auth_service import AuthService
 from backend.models import Registration
-from backend.database.schema import DBAccount
-from backend.exceptions import EntityNotFound, DuplicateEntityValue, InvalidCredentials
+from backend.database.schema import DBAccount, DBChat
+from backend.exceptions import EntityNotFound, DuplicateEntityValue, InvalidCredentials, ChatOwnerRemoval
 
 
 def get_all_accounts(session: Session) -> list[DBAccount]:
@@ -76,10 +76,14 @@ def update_password(session: Session, account_id: int, old_password: str, new_pa
     session.commit()
 
 def delete_account(session: Session, account_id: int):
-    """Delete an account."""
+    """Delete an account. Raises ChatOwnerRemoval if the account owns any chats."""
     account = session.get(DBAccount, account_id)
     if not account:
         raise EntityNotFound("account", account_id)
+
+    # ✅ Check if the account is the owner of any chats
+    if session.exec(select(DBChat).where(DBChat.owner_id == account_id)).first():
+        raise ChatOwnerRemoval()
 
     session.delete(account)
     session.commit()
