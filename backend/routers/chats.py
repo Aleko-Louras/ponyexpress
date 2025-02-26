@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.database import chat as ChatRepository
 from backend.database.schema import DBChat, DBAccount
 from backend.dependencies import DBSession, get_current_user
-from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired
+from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, AccessDenied
 from backend.models import Chat, Metadata, Account, Message, ChatCreate, ChatUpdate
 from typing import List
 
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/chats", tags=["Chats"])
 def create_chat(chat_create: ChatCreate, session: DBSession, user: DBAccount = Depends(get_current_user)):
     """Create a new chat - User must match the owner_id."""
     if user.id != chat_create.owner_id:
-        raise HTTPException(status_code=403, detail={"error": "access_denied", "message": "Cannot create chat on behalf of different account"})
+        raise AccessDenied()
     return ChatRepository.create_chat(session, chat_create)
 
 

@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from backend.dependencies import create_db_tables
 from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, ChatOwnerRemoval, \
-    InvalidCredentials, ExpiredAccessToken, AuthenticationRequired, InvalidAccessToken
+    InvalidCredentials, ExpiredAccessToken, AuthenticationRequired, InvalidAccessToken, AccessDenied
 from backend.routers import accounts, chats, memberships, messages, auth
 
 @asynccontextmanager
@@ -83,6 +83,15 @@ def handle_invalid_access_token(request: Request, exc: InvalidAccessToken):
     return JSONResponse(
         status_code=403,
         content={"error": exc.error, "message": exc.message}
+    )
+@app.exception_handler(AccessDenied)
+def handle_access_denied(request: Request, exc: AccessDenied):
+    return JSONResponse(
+        status_code=403,
+        content={
+            "error": exc.error,
+            "message": exc.message
+        }
     )
 
 app.include_router(accounts.router)
