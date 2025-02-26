@@ -20,3 +20,8 @@ class ChatOwnerRemoval(Exception):
     def __init__(self):
         self.error = "chat_owner_removal"
         self.message = "Unable to remove the owner of a chat"
+class InvalidCredentials(Exception):
+    """Exception raised for invalid username or password."""
+    def __init__(self):
+        self.error = "invalid_credentials"
+        self.message = "Authentication failed: invalid username or password"

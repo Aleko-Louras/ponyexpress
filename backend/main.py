@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from backend.dependencies import create_db_tables
-from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, ChatOwnerRemoval
+from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, ChatOwnerRemoval, \
+    InvalidCredentials
 from backend.routers import accounts, chats, memberships, messages, auth
 
 @asynccontextmanager
@@ -54,6 +55,13 @@ def handle_chat_membership_required(request: Request, exc: ChatMembershipRequire
 def handle_chat_owner_removal(request: Request, exc: ChatOwnerRemoval):
     return JSONResponse(
         status_code=422,
+        content={"error": exc.error, "message": exc.message}
+    )
+@app.exception_handler(InvalidCredentials)
+def handle_invalid_credentials(request: Request, exc: InvalidCredentials):
+    """Return a 401 response without the 'detail' wrapper."""
+    return JSONResponse(
+        status_code=401,
         content={"error": exc.error, "message": exc.message}
     )
 
