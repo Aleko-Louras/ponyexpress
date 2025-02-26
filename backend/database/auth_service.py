@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from jose import jwt, ExpiredSignatureError, JWTError
 import os
 
+from backend.exceptions import InvalidAccessToken, ExpiredAccessToken
+
 # Environment Variables
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-dev-key")
 JWT_ALGORITHM = "HS256"
@@ -40,6 +42,6 @@ class AuthService:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM], issuer=JWT_ISSUER)
             return payload
         except ExpiredSignatureError:
-            raise ValueError("expired_access_token")
+            raise ExpiredAccessToken()
         except JWTError:
-            raise ValueError("invalid_access_token")
+            raise InvalidAccessToken()
