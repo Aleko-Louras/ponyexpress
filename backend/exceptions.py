@@ -25,3 +25,20 @@ class InvalidCredentials(Exception):
     def __init__(self):
         self.error = "invalid_credentials"
         self.message = "Authentication failed: invalid username or password"
+class AuthenticationRequired(Exception):
+    """Exception raised when no access token is provided."""
+    def __init__(self):
+        self.error = "authentication_required"
+        self.message = "Not authenticated"
+
+class ExpiredAccessToken(Exception):
+    """Exception raised when the access token has expired."""
+    def __init__(self):
+        self.error = "expired_access_token"
+        self.message = "Authentication failed: expired access token"
+
+class InvalidAccessToken(Exception):
+    """Exception raised when the access token is invalid."""
+    def __init__(self):
+        self.error = "invalid_access_token"
+        self.message = "Authentication failed: invalid access token"

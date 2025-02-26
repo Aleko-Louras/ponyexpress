@@ -12,6 +12,8 @@ from backend.database.auth_service import AuthService
 from backend.database.schema import *
 from fastapi import Depends, HTTPException
 
+from backend.exceptions import AuthenticationRequired, InvalidAccessToken, ExpiredAccessToken
+
 _db_filename = "backend/database/development.db"
 _db_url = f"sqlite:///{_db_filename}"
 connect_args = {"check_same_thread": False}
@@ -41,10 +43,7 @@ def get_access_token(
         return cookie_token
     if bearer_token:
         return bearer_token.credentials
-    raise HTTPException(
-        status_code=403,
-        detail={"error": "authentication_required", "message": "Not authenticated"}
-    )
+    raise AuthenticationRequired()
 
 
 def get_current_user(session: DBSession, token: str = Depends(get_access_token)) -> DBAccount:
@@ -54,17 +53,14 @@ def get_current_user(session: DBSession, token: str = Depends(get_access_token))
         user_id = int(payload["sub"])
         user = UserService.get_user_by_id(session, user_id)
         if user is None:
-            raise ValueError("authentication_required")
+            raise AuthenticationRequired()  # ✅ No user found, raise custom exception
         return user
 
     except ValueError as error:
         error_message = str(error)
-        status_map = {
-            "expired_access_token": "Authentication failed: expired access token",
-            "invalid_access_token": "Authentication failed: invalid access token",
-            "authentication_required": "Not authenticated"
-        }
-        raise HTTPException(
-            status_code=403,
-            detail={"error": error_message, "message": status_map.get(error_message, "Not authenticated")}
-        )
+        if error_message == "expired_access_token":
+            raise ExpiredAccessToken()
+        elif error_message == "invalid_access_token":
+            raise InvalidAccessToken()
+        elif error_message == "authentication_required":
+            raise AuthenticationRequired()
