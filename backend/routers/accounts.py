@@ -25,7 +25,7 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
     return account
 
 
-@router.put("/me", response_model=Account)  # ✅ Use response_model to filter fields
+@router.put("/me")  # ✅ Use response_model to filter fields
 def update_current_account(
     session: DBSession,
     user: DBAccount = Depends(get_current_user),
