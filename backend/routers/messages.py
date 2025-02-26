@@ -3,7 +3,7 @@ from backend.database import message as MessageRepository
 from backend.database.schema import DBChat, DBMessage, DBAccount
 from backend.dependencies import DBSession, get_current_user
 from backend.models import MessageCreate, MessageUpdate, Message
-from backend.exceptions import EntityNotFound, ChatMembershipRequired
+from backend.exceptions import EntityNotFound, ChatMembershipRequired, AccessDenied
 
 router = APIRouter(prefix="/chats", tags=["Messages"])
 
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/chats", tags=["Messages"])
 def create_message(chat_id: int, message_create: MessageCreate, session: DBSession, user: DBAccount = Depends(get_current_user)):
     """Create a new message in a chat - User must match the account_id."""
     if user.id != message_create.account_id:
-        raise HTTPException(status_code=403, detail={"error": "access_denied", "message": "Cannot create message on behalf of different account"})
+        raise AccessDenied()
     return MessageRepository.create_message(session, chat_id, message_create)
 
 @router.put("/{chat_id}/messages/{message_id}", response_model=Message)

@@ -42,3 +42,8 @@ class InvalidAccessToken(Exception):
     def __init__(self):
         self.error = "invalid_access_token"
         self.message = "Authentication failed: invalid access token"
+class AccessDenied(Exception):
+    """Exception raised when a user attempts to perform an unauthorized action."""
+    def __init__(self):
+        self.error = "access_denied"
+        self.message = "Cannot create message on behalf of different account"
