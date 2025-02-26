@@ -86,12 +86,17 @@ def delete_account(session: Session, account_id: int):
 class UserService:
     @staticmethod
     def register_user(session: Session, form: Registration) -> DBAccount:
+        """Register a new user account."""
+
+        # Duplicate username
         if session.exec(select(DBAccount).where(DBAccount.username == form.username)).first():
-            raise DuplicateEntityValue("Duplicate value: account with username={} already exists".format(form.username))
+            raise DuplicateEntityValue("account", "username", form.username)
 
+        # Duplicate email
         if session.exec(select(DBAccount).where(DBAccount.email == form.email)).first():
-            raise DuplicateEntityValue("Duplicate value: account with email={} already exists".format(form.email))
+            raise DuplicateEntityValue("account", "email", form.email)
 
+        # Create user
         hashed_password = AuthService.hash_password(form.password)
         user = DBAccount(username=form.username, email=form.email, hashed_password=hashed_password)
         session.add(user)
