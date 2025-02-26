@@ -1,12 +1,20 @@
 import pytest
 from starlette.testclient import TestClient
 from backend import app
+from backend.database.auth_service import AuthService
+
 
 @pytest.fixture
 def client():
     """Test client for HTTP request tests."""
     with TestClient(app) as test_client:
         yield test_client
+
+USER_ID = 1
+USERNAME = "testuser"
+TOKEN = AuthService.create_access_token(USER_ID)
+HEADERS = {"Authorization": f"Bearer {TOKEN}"}
+
 
 def test_get_chats(client):
     response = client.get("/chats")
@@ -83,3 +91,23 @@ def test_delete_nonexistent_chat(client):
     response = client.delete("/chats/999")
     assert response.status_code == 404
     assert response.json()["error"] == "entity_not_found"
+
+def test_create_chat_access_denied(client):
+    response = client.post("/chats", json={"name": "Unauthorized Chat", "owner_id": 99}, headers=HEADERS)
+    assert response.status_code == 403
+    assert response.json()["error"] == "access_denied"
+    assert response.json()["message"] == "Cannot create chat on behalf of different account"
+
+def test_post_chat_message_access_denied(client):
+    response = client.post("/chats/1/messages", json={"text": "Hello", "account_id": 99}, headers=HEADERS)
+    assert response.status_code == 403
+    assert response.json()["error"] == "access_denied"
+    assert response.json()["message"] == "Cannot create message on behalf of different account"
+
+def test_update_chat_duplicate_name(client):
+    client.post("/chats", json={"name": "Unique Chat", "owner_id": USER_ID}, headers=HEADERS)
+    response = client.put("/chats/1", json={"name": "Unique Chat"}, headers=HEADERS)
+    assert response.status_code == 422
+    assert response.json()["error"] == "duplicate_entity_value"
+
+
