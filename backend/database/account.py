@@ -48,22 +48,18 @@ def update_account(session: Session, account_id: int, username: str | None = Non
         existing_username = session.exec(select(DBAccount).where(DBAccount.username == username)).first()
         if existing_username:
             raise DuplicateEntityValue("account", "username", username)
+        account.username = username  # ✅ Make sure assignment happens
 
     # ✅ Check for duplicate email before updating
     if email and email != account.email:
         existing_email = session.exec(select(DBAccount).where(DBAccount.email == email)).first()
         if existing_email:
             raise DuplicateEntityValue("account", "email", email)
+        account.email = email  # ✅ Make sure assignment happens
 
-    # ✅ Apply updates if validation passed
-    if username:
-        account.username = username
-    if email:
-        account.email = email
-
-    session.add(account)  # Ensure SQLAlchemy registers changes
+    session.add(account)  # ✅ Ensure SQLAlchemy detects changes
     session.commit()
-    session.refresh(account)  # Refresh to ensure latest data is returned
+    session.refresh(account)  # ✅ Refresh to get updated values
     return account
 
 def update_password(session: Session, account_id: int, old_password: str, new_password: str):
