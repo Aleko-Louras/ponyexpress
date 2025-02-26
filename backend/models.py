@@ -44,6 +44,9 @@ class MessageUpdate(BaseModel):
 class MembershipCreate(BaseModel):
     account_id: int
 
+class AccountUpdate(BaseModel):
+    username: str | None = None
+    email: str | None = None
 #Models for auth
 
 class Registration(BaseModel):
@@ -64,5 +67,6 @@ class Claims(BaseModel):
     iss: str
     iat: int
     exp: int
+
 
 

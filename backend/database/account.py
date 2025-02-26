@@ -38,33 +38,37 @@ def get_account_by_id(session: Session, account_id: int) -> DBAccount:
     return account
 
 
-def update_account(session: Session, account_id: int, username: str | None = None,
-                   email: str | None = None) -> DBAccount:
+def update_account(session: Session, account_id: int, username: str | None = None, email: str | None = None) -> DBAccount:
     """Update the username and/or email of an account."""
+    print(f"DEBUG - Received username: {username}, email: {email}")
     account = session.get(DBAccount, account_id)
     if not account:
         raise EntityNotFound("account", account_id)
 
     print("Before update:", account)
 
-    if username and username != account.username:
+    # ✅ Check for duplicate username BEFORE updating
+    if username:
         existing_username = session.exec(select(DBAccount).where(DBAccount.username == username)).first()
-        if existing_username:
+        if existing_username and existing_username.id != account_id:  # ✅ Prevent duplicate, allow same username
             raise DuplicateEntityValue("account", "username", username)
-        account.username = username
 
-    if email and email != account.email:
+        account.username = username  # ✅ Always update if provided
+
+    # ✅ Check for duplicate email BEFORE updating
+    if email:
         existing_email = session.exec(select(DBAccount).where(DBAccount.email == email)).first()
-        if existing_email:
+        if existing_email and existing_email.id != account_id:  # ✅ Prevent duplicate, allow same email
             raise DuplicateEntityValue("account", "email", email)
-        account.email = email
 
-    print("After update:", account)  # ✅ Check if fields are updated before commit
+        account.email = email  # ✅ Always update if provided
+
+    print("After update (before commit):", account)
 
     session.commit()
-    session.refresh(account)  # ✅ Ensure the latest data is retrieved
+    session.refresh(account)
 
-    print("After refresh:", account)  # ✅ Final check before returning
+    print("After refresh:", account)
 
     return account
 
