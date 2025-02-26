@@ -36,7 +36,7 @@ def web_login(
     response.set_cookie(key="pony_express_token", value=AuthService.create_access_token(user.id), httponly=True)
     return response
 @router.post("/web/logout", status_code=204)
-def web_logout():
+def web_logout(user: DBAccount = Depends(get_current_user)):
     response = Response(status_code=204)
     response.delete_cookie("pony_express_token")
     return response
