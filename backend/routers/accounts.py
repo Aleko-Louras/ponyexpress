@@ -22,7 +22,7 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
 @router.get("/me", response_model=Account)
 def get_current_account(user: DBAccount = Depends(get_current_user)) -> Account:
     """Retrieve the account data of the authenticated user."""
-    return Account(id=user.id, username=user.username)
+    return Account(id=user.id, username=user.username, email= user.email)
 
 @router.put("/me")
 def update_current_account(session: DBSession, user: DBAccount = Depends(get_current_user), username: str | None = None, email: str | None = None):
