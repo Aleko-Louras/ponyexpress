@@ -32,10 +32,15 @@ def update_current_account(
     username: str | None = None,
     email: str | None = None,
 ):
-    """Update the authenticated user's account and return only allowed fields."""
+    """Update the authenticated user's account."""
     updated_account = AccountRepository.update_account(session, user.id, username, email)
-    return Account(id=updated_account.id, username=updated_account.username, email=updated_account.email)
 
+    # ✅ Always return id, username, and email
+    return {
+        "id": updated_account.id,
+        "username": updated_account.username,
+        "email": updated_account.email,  # ✅ Ensure email is always included
+    }
 @router.put("/me/password", status_code=204)
 def update_password(
     session: DBSession,
