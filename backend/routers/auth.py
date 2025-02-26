@@ -35,12 +35,14 @@ def web_login(
     session: DBSession,
     form: Annotated[Login, Form()]
 ):
+    """Login and store JWT token in an HTTP-only cookie."""
     user = UserService.validate_credentials(session, form.username, form.password)
+    response = Response(status_code=204)  # ✅ Create a Response with 204 status
     response.set_cookie(key="pony_express_token", value=AuthService.create_access_token(user.id), httponly=True)
     return response
-
 @router.post("/web/logout", status_code=204)
 def web_logout(response: Response, user: DBAccount = Depends(get_current_user)):
     """Logout a logged-in user by deleting the authentication cookie."""
+    response = Response(status_code=204)  # ✅ Create a Response with 204 status
     response.delete_cookie("pony_express_token")
     return response
