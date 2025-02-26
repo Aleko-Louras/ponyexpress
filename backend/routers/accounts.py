@@ -1,7 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from backend.database import account as AccountRepository
 from backend.database.schema import DBAccount
-from backend.dependencies import DBSession
+from backend.dependencies import DBSession, get_current_user
 from backend.models import Account
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
