@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form
 from backend.database import account as AccountRepository
 from backend.database.schema import DBAccount
 from backend.dependencies import DBSession, get_current_user
-from backend.models import Account, AccountWithEmail
+from backend.models import Account, AccountWithEmail, AccountUpdate
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -27,19 +27,18 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
 
 @router.put("/me")  # ✅ Use response_model to filter fields
 def update_current_account(
+    account_update: AccountUpdate,
     session: DBSession,
     user: DBAccount = Depends(get_current_user),
-    username: str | None = None,
-    email: str | None = None,
 ):
     """Update the authenticated user's account."""
-    updated_account = AccountRepository.update_account(session, user.id, username, email)
-
+    updated_account = AccountRepository.update_account(session, user.id, account_update.username, account_update.email)
+    print(updated_account.email)
     # ✅ Always return id, username, and email
     return {
         "id": updated_account.id,
         "username": updated_account.username,
-        "email": updated_account.email,  # ✅ Ensure email is always included
+        "email": updated_account.email,
     }
 @router.put("/me/password", status_code=204)
 def update_password(

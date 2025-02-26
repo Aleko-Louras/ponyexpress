@@ -94,7 +94,22 @@ def test_invalid_access_token(client, monkeypatch):
     assert response.json()["error"] == "invalid_access_token"
 
 
-# ✅ Summary
-# - Added tests for GET /accounts/me, PUT /accounts/me, PUT /accounts/me/password, and DELETE /accounts/me
-# - Included error cases for duplicate username, duplicate email, invalid password, and token errors
-# - Uses HEADERS with Bearer token for authenticated routes
+def test_debug_update_me(client):
+    """Manually test updating an account and print response."""
+
+    response = client.put(
+        "/accounts/me",
+        headers=HEADERS,
+        json={"username": "new", "email": "new@e.mail"},
+    )
+
+    print("DEBUG - API Response:", response.json())  # ✅ Check what the test sees
+
+    expected_response = {
+        "id": 1,
+        "username": "new",
+        "email": "new@e.mail",
+    }
+
+    assert response.json() == expected_response, f"FAILED - Expected: {expected_response}, Got: {response.json()}"# ✅ Summary
+
