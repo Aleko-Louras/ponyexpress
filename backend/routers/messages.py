@@ -12,7 +12,7 @@ router = APIRouter(prefix="/chats", tags=["Messages"])
 def create_message(chat_id: int, message_create: MessageCreate, session: DBSession, user: DBAccount = Depends(get_current_user)):
     """Create a new message in a chat - User must match the account_id."""
     if user.id != message_create.account_id:
-        raise AccessDenied()
+        raise AccessDenied("Cannot create message on behalf of different account")
     return MessageRepository.create_message(session, chat_id, message_create)
 
 @router.put("/{chat_id}/messages/{message_id}", response_model=Message)

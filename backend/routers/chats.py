@@ -12,7 +12,7 @@ router = APIRouter(prefix="/chats", tags=["Chats"])
 def create_chat(chat_create: ChatCreate, session: DBSession, user: DBAccount = Depends(get_current_user)):
     """Create a new chat - User must match the owner_id."""
     if user.id != chat_create.owner_id:
-        raise AccessDenied()
+        raise AccessDenied("Cannot create chat on behalf of different account")
     return ChatRepository.create_chat(session, chat_create)
 
 

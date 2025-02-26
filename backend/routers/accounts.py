@@ -30,8 +30,15 @@ def update_current_account(session: DBSession, user: DBAccount = Depends(get_cur
     """Update the authenticated user's account."""
     return AccountRepository.update_account(session, user.id, username, email)
 
+from fastapi import Form
+
 @router.put("/me/password", status_code=204)
-def update_password(session: DBSession, old_password: str, new_password: str, user: DBAccount = Depends(get_current_user)):
+def update_password(
+    session: DBSession,
+    user: DBAccount = Depends(get_current_user),
+    old_password: str = Form(...),
+    new_password: str = Form(...)
+):
     """Update the authenticated user's password."""
     AccountRepository.update_password(session, user.id, old_password, new_password)
 
