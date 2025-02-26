@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from backend.database import account as AccountRepository
 from backend.database.schema import DBAccount
 from backend.dependencies import DBSession, get_current_user
-from backend.models import Account
+from backend.models import Account, AccountWithEmail
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -19,10 +19,10 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
     account = AccountRepository.get_account_by_id(session, account_id)
     return account
 
-@router.get("/me", response_model=Account)
-def get_current_account(user: DBAccount = Depends(get_current_user)) -> Account:
+@router.get("/me", response_model=AccountWithEmail)
+def get_current_account(user: DBAccount = Depends(get_current_user)) -> AccountWithEmail:
     """Retrieve the account data of the authenticated user."""
-    return Account(id=user.id, username=user.username, email= user.email)
+    return AccountWithEmail(id=user.id, username=user.username, email= user.email)
 
 @router.put("/me")
 def update_current_account(session: DBSession, user: DBAccount = Depends(get_current_user), username: str | None = None, email: str | None = None):
