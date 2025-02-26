@@ -16,7 +16,6 @@ def get_accounts(session: DBSession) -> dict:
 
 @router.get("/me", response_model=AccountWithEmail, status_code=200)
 def get_current_account(user: DBAccount = Depends(get_current_user)) -> AccountWithEmail:
-    """Retrieve the account data of the authenticated user."""
     return AccountWithEmail(id=user.id, username=user.username, email= user.email)
 
 @router.get("/{account_id}", response_model=Account)
@@ -25,21 +24,19 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
     return account
 
 
-@router.put("/me")  # ✅ Use response_model to filter fields
+@router.put("/me")
 def update_current_account(
     account_update: AccountUpdate,
     session: DBSession,
     user: DBAccount = Depends(get_current_user),
 ):
-    """Update the authenticated user's account."""
     updated_account = AccountRepository.update_account(session, user.id, account_update.username, account_update.email)
-    print(updated_account.email)
-    # ✅ Always return id, username, and email
     return {
         "id": updated_account.id,
         "username": updated_account.username,
         "email": updated_account.email,
     }
+
 @router.put("/me/password", status_code=204)
 def update_password(
     session: DBSession,
@@ -47,12 +44,10 @@ def update_password(
     old_password: str = Form(...),
     new_password: str = Form(...)
 ):
-    """Update the authenticated user's password."""
     AccountRepository.update_password(session, user.id, old_password, new_password)
 
 @router.delete("/me", status_code=204)
 def delete_current_account(session: DBSession, user: DBAccount = Depends(get_current_user)):
-    """Delete the authenticated user's account."""
     AccountRepository.delete_account(session, user.id)
 
 

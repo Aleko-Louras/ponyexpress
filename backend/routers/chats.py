@@ -2,29 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.database import chat as ChatRepository
 from backend.database.schema import DBChat, DBAccount
 from backend.dependencies import DBSession, get_current_user
-from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, AccessDenied
-from backend.models import Chat, Metadata, Account, Message, ChatCreate, ChatUpdate
-from typing import List
+from backend.models import Chat,Account, Message, ChatCreate, ChatUpdate
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
 
 @router.post("/", response_model=Chat, status_code=201)
 def create_chat(chat_create: ChatCreate, session: DBSession, user: DBAccount = Depends(get_current_user)):
-    """Create a new chat - User must match the owner_id."""
-    if user.id != chat_create.owner_id:
-        raise AccessDenied("Cannot create chat on behalf of different account")
-    return ChatRepository.create_chat(session, chat_create)
+    return ChatRepository.create_chat(session, chat_create, user.id)
 
 
 @router.put("/{chat_id}", response_model=Chat)
 def update_chat(chat_id: int, chat_update: ChatUpdate, session: DBSession, user: DBAccount = Depends(get_current_user)):
-    """Update an existing chat - User must be the chat owner."""
-    chat = ChatRepository.get_chat_by_id(session, chat_id)
-    if chat.owner_id != user.id:
-        raise HTTPException(status_code=403, detail={"error": "access_denied", "message": "Cannot update chat on behalf of different account"})
-
-    # ✅ Using existing repository function to handle duplicate name check
-    return ChatRepository.update_chat(session, chat_id, chat_update)
+    return ChatRepository.update_chat(session, chat_id, chat_update, user.id)
 
 @router.delete("/{chat_id}", status_code=204)
 def delete_chat(chat_id: int, session: DBSession):

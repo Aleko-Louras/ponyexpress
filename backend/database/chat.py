@@ -1,18 +1,21 @@
 from sqlmodel import Session, select
 from backend.database.schema import DBChat, DBMessage, DBAccount, DBChatMembership
-from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired
+from backend.exceptions import EntityNotFound, DuplicateEntityValue, ChatMembershipRequired, AccessDenied
 from backend.models import ChatCreate, ChatUpdate
 
 
-def create_chat(session: Session, chat_create: ChatCreate) -> DBChat:
+def create_chat(session: Session, chat_create: ChatCreate, user_id: int) -> DBChat:
     """Create a chat in the database
 
        Args:
            session (Session): The database session
-            chat_create (ChatCreate): The chatcreate DataModel for body parameters
+           chat_create (ChatCreate): The chatcreate DataModel for body parameters
+           user_id (int): The id of the user we are updating the chat for
        Returns:
            DBChat: The newly made database chat entity
     """
+    if user_id != chat_create.owner_id:
+        raise AccessDenied("Cannot create chat on behalf of different account")
     if not session.get(DBAccount, chat_create.owner_id):#if the account doesnt exists
         raise EntityNotFound("account", chat_create.owner_id)
     if session.exec(select(DBChat).where(DBChat.name == chat_create.name)).first():#if the chat exists already
@@ -28,14 +31,14 @@ def create_chat(session: Session, chat_create: ChatCreate) -> DBChat:
     session.commit()
     return chat_to_add
 
-def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate) -> DBChat:
+def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate, user_id: int) -> DBChat:
     """Update a chat's name and/or owner.
 
         Args:
             session (Session): The database session
             chat_id (int): The ID of the chat to be updated
             chat_update (ChatUpdate): The data model containing the updated name and/or owner ID paremeters
-
+            user_id (int): The id of the user that we are updating the chat for
         Returns:
             DBChat: The updated chat entity
     """
@@ -43,6 +46,8 @@ def update_chat(session: Session, chat_id: int, chat_update: ChatUpdate) -> DBCh
     if not chat:
         raise EntityNotFound("chat", chat_id)
 
+    if chat.owner_id != user_id:
+        raise AccessDenied("Cannot update chat on behalf of different account")
     #check for duplicate and null values for which to update
     if chat_update.name:
         existing_chat = session.exec(select(DBChat).where(DBChat.name == chat_update.name)).first()
