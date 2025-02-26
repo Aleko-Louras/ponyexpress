@@ -43,18 +43,18 @@ def update_account(session: Session, account_id: int, username: str | None = Non
     if not account:
         raise EntityNotFound("account", account_id)
 
-    # Update username if provided
-    if username:
+    # ✅ Check for duplicate username before updating
+    if username and username != account.username:
         existing_username = session.exec(select(DBAccount).where(DBAccount.username == username)).first()
-        if existing_username and existing_username.id != account_id:
-            raise DuplicateEntityValue("account", "username", username)
+        if existing_username:
+            raise DuplicateEntityValue("account", "username", username)  # ✅ Ensure exception is raised
         account.username = username
 
-    # Update email if provided
-    if email:
+    # ✅ Check for duplicate email before updating
+    if email and email != account.email:
         existing_email = session.exec(select(DBAccount).where(DBAccount.email == email)).first()
-        if existing_email and existing_email.id != account_id:
-            raise DuplicateEntityValue("account", "email", email)
+        if existing_email:
+            raise DuplicateEntityValue("account", "email", email)  # ✅ Ensure exception is raised
         account.email = email
 
     session.commit()
