@@ -19,7 +19,7 @@ def get_account(account_id: int, session: DBSession) -> DBAccount:
     account = AccountRepository.get_account_by_id(session, account_id)
     return account
 
-@router.get("/me", response_model=AccountWithEmail)
+@router.get("/me", response_model=AccountWithEmail, status_code=200)
 def get_current_account(user: DBAccount = Depends(get_current_user)) -> AccountWithEmail:
     """Retrieve the account data of the authenticated user."""
     return AccountWithEmail(id=user.id, username=user.username, email= user.email)

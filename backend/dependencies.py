@@ -3,7 +3,7 @@
 Args:
     engine (sqlachemy.engine.Engine): The database engine
 """
-from fastapi.security import APIKeyCookie, HTTPBearer
+from fastapi.security import APIKeyCookie, HTTPBearer, OAuth2PasswordBearer, HTTPAuthorizationCredentials
 from sqlmodel import SQLModel, create_engine, Session
 from typing import Annotated
 
@@ -31,19 +31,19 @@ def get_session():
 DBSession = Annotated[Session, Depends(get_session)]
 
 cookie_scheme = APIKeyCookie(name="pony_express_token", auto_error=False)
-bearer_scheme = HTTPBearer(auto_error=False)
-
+bearer_scheme = HTTPBearer(auto_error=False)  # ✅ Use HTTPBearer for .credentials
 
 def get_access_token(
     cookie_token: str | None = Depends(cookie_scheme),
-    bearer_token: str | None = Depends(bearer_scheme)
+    bearer_token: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)  # ✅ Notice this type hint
 ) -> str:
     """Retrieve JWT from Authorization header or HTTP-only cookie."""
-    if cookie_token:
+    if cookie_token is not None:
         return cookie_token
-    if bearer_token:
-        return bearer_token.credentials
-    raise AuthenticationRequired()
+    elif bearer_token is not None:
+        return bearer_token.credentials  # ✅ Works because of HTTPAuthorizationCredentials
+    else:
+        raise AuthenticationRequired()
 
 
 def get_current_user(session: DBSession, token: str = Depends(get_access_token)) -> DBAccount:
