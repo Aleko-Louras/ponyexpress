@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from backend.database.auth_service import AuthService
 from backend.models import Registration
 from backend.database.schema import DBAccount
-from backend.exceptions import EntityNotFound, DuplicateEntityValue
+from backend.exceptions import EntityNotFound, DuplicateEntityValue, InvalidCredentials
 
 
 def get_all_accounts(session: Session) -> list[DBAccount]:
@@ -110,13 +110,7 @@ class UserService:
         """Validate user credentials and return the user if valid."""
         user = session.exec(select(DBAccount).where(DBAccount.username == username)).first()
         if user is None or not AuthService.verify_password(password, user.hashed_password):
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "error": "invalid_credentials",
-                    "message": "Authentication failed: invalid username or password"
-                }
-            )
+            raise InvalidCredentials()  # ✅ Custom exception with no "detail" wrapper
         return user
     @staticmethod
     def get_user_by_id(session: Session, user_id: int) -> DBAccount:
