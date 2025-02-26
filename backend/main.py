@@ -38,17 +38,14 @@ def handle_entity_not_found(request: Request, exc: EntityNotFound):
 def handle_duplicate_entity_value(request: Request, exc: DuplicateEntityValue):
     return JSONResponse(
         status_code=422,
-        content={"error": exc.error,
-                 "message": exc.message,
-        },
+        content={"error": exc.error, "message": exc.message}
     )
 
 @app.exception_handler(ChatMembershipRequired)
 def handle_chat_membership_required(request: Request, exc: ChatMembershipRequired):
     return JSONResponse(
         status_code=422,
-        content={"error": exc.error, "message": exc.message,
-        },
+        content={"error": exc.error, "message": exc.message}
     )
 
 @app.exception_handler(ChatOwnerRemoval)
@@ -59,7 +56,6 @@ def handle_chat_owner_removal(request: Request, exc: ChatOwnerRemoval):
     )
 @app.exception_handler(InvalidCredentials)
 def handle_invalid_credentials(request: Request, exc: InvalidCredentials):
-    """Return a 401 response without the 'detail' wrapper."""
     return JSONResponse(
         status_code=401,
         content={"error": exc.error, "message": exc.message}
@@ -88,10 +84,7 @@ def handle_invalid_access_token(request: Request, exc: InvalidAccessToken):
 def handle_access_denied(request: Request, exc: AccessDenied):
     return JSONResponse(
         status_code=403,
-        content={
-            "error": exc.error,
-            "message": exc.message
-        }
+        content={"error": exc.error, "message": exc.message}
     )
 
 app.include_router(accounts.router)
