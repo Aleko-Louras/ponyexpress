@@ -7,8 +7,7 @@ class Metadata(BaseModel):
 class Account(BaseModel):
     id: int
     username: str
-class AccountWithEmail(Account):
-    email: str
+    email: str | None = None
 class Chat(BaseModel):
     id: int
     name: str
