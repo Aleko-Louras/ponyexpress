@@ -37,29 +37,35 @@ def get_account_by_id(session: Session, account_id: int) -> DBAccount:
         raise EntityNotFound("account", account_id)
     return account
 
-def update_account(session: Session, account_id: int, username: str | None = None, email: str | None = None) -> DBAccount:
+
+def update_account(session: Session, account_id: int, username: str | None = None,
+                   email: str | None = None) -> DBAccount:
     """Update the username and/or email of an account."""
     account = session.get(DBAccount, account_id)
     if not account:
         raise EntityNotFound("account", account_id)
 
-    # ✅ Check for duplicate username before updating
+    print("Before update:", account)
+
     if username and username != account.username:
         existing_username = session.exec(select(DBAccount).where(DBAccount.username == username)).first()
         if existing_username:
             raise DuplicateEntityValue("account", "username", username)
-        account.username = username  # ✅ Make sure assignment happens
+        account.username = username
 
-    # ✅ Check for duplicate email before updating
     if email and email != account.email:
         existing_email = session.exec(select(DBAccount).where(DBAccount.email == email)).first()
         if existing_email:
             raise DuplicateEntityValue("account", "email", email)
-        account.email = email  # ✅ Make sure assignment happens
+        account.email = email
 
-    session.add(account)  # ✅ Ensure SQLAlchemy detects changes
+    print("After update:", account)  # ✅ Check if fields are updated before commit
+
     session.commit()
-    session.refresh(account)  # ✅ Refresh to get updated values
+    session.refresh(account)  # ✅ Ensure the latest data is retrieved
+
+    print("After refresh:", account)  # ✅ Final check before returning
+
     return account
 
 def update_password(session: Session, account_id: int, old_password: str, new_password: str):
