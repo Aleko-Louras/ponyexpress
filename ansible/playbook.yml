@@ -1,0 +1,129 @@
+# -------------------------------------------------------
+# ansible/playbook.yml — Pony Express Server Configuration
+# Target: Amazon Linux 2023 (Python 3.9+)
+# -------------------------------------------------------
+
+---
+- name: Configure Pony Express server
+  hosts: ponyexpress
+  become: true
+  vars:
+    app_dir: /home/ec2-user/app
+
+  tasks:
+
+    # -------------------------------------------------------
+    # DOCKER INSTALLATION (AL2023 uses dnf)
+    # -------------------------------------------------------
+
+    - name: Update all packages
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: Install Docker
+      dnf:
+        name: docker
+        state: present
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: true
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: "0755"
+
+    - name: Install AWS CLI
+      dnf:
+        name:
+          - awscli
+        state: present
+
+    # -------------------------------------------------------
+    # APP DIRECTORY
+    # -------------------------------------------------------
+
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+        mode: "0755"
+
+    - name: Copy docker-compose.yml to server
+      copy:
+        src: ../docker-compose.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ec2-user
+        group: ec2-user
+
+    # -------------------------------------------------------
+    # CIS HARDENING
+    # -------------------------------------------------------
+
+    - name: Disable root SSH login (CIS 5.2.8)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+        state: present
+      notify: Restart SSH
+
+    - name: Disable password authentication (CIS 5.2.9)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+      notify: Restart SSH
+
+    - name: Set SSH idle timeout (CIS 5.2.12)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^ClientAliveInterval"
+        line: "ClientAliveInterval 300"
+        state: present
+      notify: Restart SSH
+
+    - name: Set permissions on /etc/passwd (CIS 6.1.2)
+      file:
+        path: /etc/passwd
+        mode: "0644"
+
+    - name: Set permissions on /etc/shadow (CIS 6.1.3)
+      file:
+        path: /etc/shadow
+        mode: "0000"
+
+    - name: Disable unused filesystems (CIS 1.1)
+      copy:
+        dest: /etc/modprobe.d/cis.conf
+        content: |
+          install cramfs /bin/true
+          install freevxfs /bin/true
+          install jffs2 /bin/true
+          install hfs /bin/true
+          install hfsplus /bin/true
+          install udf /bin/true
+
+  # -------------------------------------------------------
+  # HANDLERS
+  # -------------------------------------------------------
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: sshd
+        state: restarted

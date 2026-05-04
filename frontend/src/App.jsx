@@ -1,3 +1,4 @@
+import {motion} from 'motion/react'
 import {BrowserRouter, Navigate, Routes, Route, NavLink, useParams} from "react-router";
 import {QueryClient, QueryClientProvider, useQueryClient} from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
@@ -238,8 +239,8 @@ function App() {
           <Route path="*" element={<NotFound />} />
           <Route path="/chats" element={<ChatsPage/>} />
           <Route path="/chats/:chatId" element={<ChatDetailPage/>}/>
-            <Route path="/login" element={<Login/>}/>
-            <Route path="/register" element={<Register/>}/>
+          <Route path="/login" element={<Login/>}/>
+          <Route path="/register" element={<Register/>}/>
           <Route path="/settings" element={<Settings/>}/>
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest /Users/aleko/macbook-mac/pony-express-nextjs --app --tailwind --eslint --no-typescript --no-src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(npm install)",
+      "Bash(npx next build)"
+    ]
+  }
+}

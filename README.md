@@ -93,3 +93,113 @@ def test_hello_world(client):
     assert response.status_code == 200
     assert response.json() == {"message": "Hello, World!"}
 ```
+
+# Pony Express — DevOps Runbook
+
+Full CI/CD deployment of the Pony Express React/FastAPI app on AWS.
+
+## Architecture
+
+```
+GitHub → GitHub Actions → AWS ECR → AWS EC2 (inside VPC)
+                ↓
+         Terraform (infra)
+         Ansible (config + hardening)
+         Docker (packaging)
+```
+
+## What each tool does
+
+| Tool | Role |
+|---|---|
+| Terraform | Creates VPC, EC2, ECR, IAM, security groups |
+| Ansible | Installs Docker, applies CIS hardening on EC2 |
+| Docker | Packages React and FastAPI into images |
+| ECR | Stores Docker images in AWS |
+| GitHub Actions | Orchestrates everything on every push |
+
+---
+
+## One-time setup (do this before first push)
+
+### Step 1 — Create S3 bucket for Terraform state
+```bash
+aws s3 mb s3://ponyexpress-terraform-state --region us-east-1
+```
+
+### Step 2 — Create EC2 key pair
+In AWS Console → EC2 → Key Pairs → Create key pair.
+Name: `ponyexpress-key`. Download the `.pem` file.
+```bash
+chmod 400 ponyexpress-key.pem
+```
+
+### Step 3 — Run Terraform locally (first time only)
+```bash
+cd terraform
+terraform init
+terraform apply -var="my_ip=$(curl -s ifconfig.me)/32"
+```
+Note the outputs — you need these for GitHub Secrets.
+
+### Step 4 — Set GitHub Secrets
+Repo → Settings → Secrets and variables → Actions → New repository secret
+
+| Secret | Value |
+|---|---|
+| `AWS_ACCESS_KEY_ID` | From AWS IAM |
+| `AWS_SECRET_ACCESS_KEY` | From AWS IAM |
+| `EC2_SSH_PRIVATE_KEY` | Full contents of `.pem` file |
+| `FRONTEND_ECR_URL` | From `terraform output frontend_ecr_url` |
+| `BACKEND_ECR_URL` | From `terraform output backend_ecr_url` |
+
+---
+
+## Every deployment after that
+
+```bash
+git checkout -b feature/my-change
+# make changes
+git push origin feature/my-change
+# open PR → tests run automatically
+# merge to main → full pipeline runs
+```
+
+Pipeline jobs in order:
+1. **test** — pytest + React tests
+2. **terraform** — updates infrastructure if `.tf` files changed
+3. **ansible** — patches and hardens EC2 (idempotent)
+4. **build-and-push** — Docker images → ECR
+5. **deploy** — SSH into EC2, pull images, restart containers
+
+---
+
+## Local development
+
+```bash
+docker-compose up --build
+# Frontend: http://localhost:80
+# Backend:  http://localhost:8000
+# API docs: http://localhost:8000/docs
+```
+
+---
+
+## Troubleshooting (escalation guide)
+
+| Symptom | Check first | Escalate if |
+|---|---|---|
+| Tests failing | Read pytest/npm output in Actions | Flaky tests with no clear cause |
+| Terraform errors | Check AWS Console for resource conflicts | IAM permission denied errors |
+| Ansible fails | Check SSH connectivity, EC2 state | Playbook runs but app still broken |
+| Docker build fails | Check Dockerfile, requirements.txt | Base image pull failures |
+| App not responding | `docker ps` on EC2, check port 80/8000 | Both containers running but no response |
+
+---
+
+## Teardown (avoid AWS charges)
+
+```bash
+cd terraform
+terraform destroy -var="my_ip=$(curl -s ifconfig.me)/32"
+```

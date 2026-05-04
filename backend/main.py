@@ -105,3 +105,6 @@ app.include_router(auth.router)
 def status():
     pass
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}

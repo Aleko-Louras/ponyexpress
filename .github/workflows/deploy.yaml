@@ -1,0 +1,222 @@
+# -------------------------------------------------------
+# .github/workflows/deploy.yml — Pony Express CI/CD
+# Jobs: test → terraform → ansible → build+push → deploy
+# -------------------------------------------------------
+
+name: Pony Express CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]    # PRs only trigger the test job
+
+env:
+  AWS_REGION: us-east-1
+  FRONTEND_ECR: ${{ secrets.FRONTEND_ECR_URL }}
+  BACKEND_ECR: ${{ secrets.BACKEND_ECR_URL }}
+
+jobs:
+
+  # -------------------------------------------------------
+  # JOB 1: TEST
+  # Runs on every push AND every PR
+  # If this fails, nothing else runs
+  # -------------------------------------------------------
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run FastAPI tests
+        run: |
+          cd backend
+          pytest tests/ -v
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run React tests
+        run: |
+          cd frontend
+          npm test -- --watchAll=false
+
+  # -------------------------------------------------------
+  # JOB 2: TERRAFORM
+  # Only runs on push to main (not PRs)
+  # Provisions or updates AWS infrastructure
+  # Uses S3 backend so state persists between runs
+  # -------------------------------------------------------
+  terraform:
+    name: Provision infrastructure
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      ec2_ip: ${{ steps.tf_output.outputs.ec2_ip }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        run: terraform init
+        working-directory: ./terraform
+
+      - name: Terraform plan
+        run: terraform plan -var="my_ip=$(curl -s ifconfig.me)/32"
+        working-directory: ./terraform
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve -var="my_ip=$(curl -s ifconfig.me)/32"
+        working-directory: ./terraform
+
+      # Capture EC2 IP for Ansible and deploy jobs
+      - name: Get EC2 IP
+        id: tf_output
+        run: |
+          echo "ec2_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+        working-directory: ./terraform
+
+  # -------------------------------------------------------
+  # JOB 3: ANSIBLE
+  # Runs after Terraform confirms infrastructure exists
+  # Configures EC2: Docker install + CIS hardening
+  # Idempotent — safe to run on every push
+  # -------------------------------------------------------
+  ansible:
+    name: Configure server
+    runs-on: ubuntu-latest
+    needs: terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      # Write the SSH key from GitHub Secrets to disk
+      - name: Write SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > /tmp/ponyexpress-key.pem
+          chmod 400 /tmp/ponyexpress-key.pem
+
+      # Build the inventory file dynamically using the EC2 IP from Terraform
+      - name: Build Ansible inventory
+        run: |
+          echo "[ponyexpress]" > ansible/inventory.ini
+          echo "${{ needs.terraform.outputs.ec2_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=/tmp/ponyexpress-key.pem" >> ansible/inventory.ini
+
+      - name: Run Ansible playbook
+        run: |
+          ansible-playbook \
+            -i ansible/inventory.ini \
+            ansible/playbook.yml \
+            --ssh-extra-args="-o StrictHostKeyChecking=no"
+
+  # -------------------------------------------------------
+  # JOB 4: BUILD & PUSH
+  # Builds Docker images and pushes to ECR
+  # Only runs after infrastructure and server are confirmed
+  # -------------------------------------------------------
+  build-and-push:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    needs: ansible
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend
+        run: |
+          docker build -t $BACKEND_ECR:latest ./backend
+          docker push $BACKEND_ECR:latest
+
+      - name: Build and push frontend
+        run: |
+          docker build -t $FRONTEND_ECR:latest ./frontend
+          docker push $FRONTEND_ECR:latest
+
+  # -------------------------------------------------------
+  # JOB 5: DEPLOY
+  # SSHs into EC2 and restarts containers with new images
+  # -------------------------------------------------------
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: [build-and-push, terraform]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ needs.terraform.outputs.ec2_ip }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: AWS_REGION,FRONTEND_ECR,BACKEND_ECR
+          script: |
+            # Authenticate Docker with ECR
+            aws ecr get-login-password --region $AWS_REGION \
+              | docker login --username AWS --password-stdin $FRONTEND_ECR
+
+            # Pull the latest images built in Job 4
+            docker pull $FRONTEND_ECR:latest
+            docker pull $BACKEND_ECR:latest
+
+            # Restart containers with new images
+            cd /home/ec2-user/app
+            FRONTEND_ECR_URL=$FRONTEND_ECR \
+            BACKEND_ECR_URL=$BACKEND_ECR \
+            docker-compose down
+            FRONTEND_ECR_URL=$FRONTEND_ECR \
+            BACKEND_ECR_URL=$BACKEND_ECR \
+            docker-compose up -d
+
+            # Verify both containers are running
+            docker ps
+
+      - name: Deployment complete
+        run: |
+          echo "Pony Express live at http://${{ needs.terraform.outputs.ec2_ip }}"
