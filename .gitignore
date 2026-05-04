@@ -173,3 +173,21 @@ cython_debug/
 # Databases
 
 **/*.db
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+
+# Node
+node_modules/
+.next/
+
+# Secrets
+*.pem
+*.key
+
+# OS
+.DS_Store
