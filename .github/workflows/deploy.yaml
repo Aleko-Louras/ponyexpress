@@ -41,7 +41,7 @@ jobs:
 
       - name: Run FastAPI tests
         run: |
-          pytest backend/__tests__/ -v
+          pytest backend/__tests__/ -v --continue-on-collection-errors
 
       - name: Set up Node 20
         uses: actions/setup-node@v4
