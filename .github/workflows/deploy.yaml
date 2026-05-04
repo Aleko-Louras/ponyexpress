@@ -163,7 +163,7 @@ jobs:
 
       - name: Build and push backend
         run: |
-          docker build -t $BACKEND_ECR:latest ./backend
+          docker build -t $BACKEND_ECR:latest -f backend/Dockerfile .
           docker push $BACKEND_ECR:latest
 
       - name: Build and push frontend
