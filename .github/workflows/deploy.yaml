@@ -37,13 +37,11 @@ jobs:
 
       - name: Install backend dependencies
         run: |
-          cd backend
           pip install -r requirements.txt
 
       - name: Run FastAPI tests
         run: |
-          cd backend
-          pytest tests/ -v
+          pytest backend/__tests__/ -v
 
       - name: Set up Node 20
         uses: actions/setup-node@v4
