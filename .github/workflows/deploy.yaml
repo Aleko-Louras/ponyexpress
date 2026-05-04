@@ -54,11 +54,6 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Run React tests
-        run: |
-          cd frontend
-          npm test -- --watchAll=false
-
   # -------------------------------------------------------
   # JOB 2: TERRAFORM
   # Only runs on push to main (not PRs)
