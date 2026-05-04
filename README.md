@@ -202,4 +202,4 @@ docker-compose up --build
 ```bash
 cd terraform
 terraform destroy -var="my_ip=$(curl -s ifconfig.me)/32"
-```
+```# triggering pipeline
